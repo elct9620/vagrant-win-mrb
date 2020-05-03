@@ -1,0 +1,105 @@
+{
+  "variables": {
+    "iso_checksum": "ee54229f5b082887052dc80c20a1782e06a5ed350e1a38358031270993eb1dc8",
+    "iso_checksum_type": "sha256",
+    "iso_url": "/Users/elct9620/Downloads/Win10_1909_English_x64_Lite.iso",
+    "disk_size": "61440",
+    "headless": "true",
+    "winrm_timeout": "6h",
+    "restart_timeout": "5m",
+    "vm_name": "mruby-win10"
+  },
+  "builders": [
+    {
+      "type": "virtualbox-iso",
+      "boot_command": "",
+      "boot_wait": "6m",
+      "communicator": "winrm",
+      "cpus": 2,
+      "memory": 2048,
+      "disk_size": "{{user `disk_size`}}",
+      "floppy_files": [
+        "Autounattend.xml",
+        "./base/floppy/WindowsPowershell.lnk",
+        "./base/floppy/PinTo10.exe",
+        "./base/scripts/fixnetwork.ps1",
+        "./base/scripts/disable-screensaver.ps1",
+        "./base/scripts/disable-winrm.ps1",
+        "./base/scripts/enable-winrm.ps1",
+        "./base/scripts/microsoft-updates.bat",
+        "./base/scripts/win-updates.ps1"
+      ],
+      "guest_additions_mode": "disable",
+      "guest_os_type": "Windows10_64",
+      "headless": "{{user `headless`}}",
+      "iso_checksum": "{{user `iso_checksum`}}",
+      "iso_checksum_type": "{{user `iso_checksum_type`}}",
+      "iso_url": "{{user `iso_url`}}",
+      "shutdown_command": "shutdown /s /t 10 /f /d p:4:1 /c \"Packer Shutdown\"",
+      "vm_name": "{{user `vm_name`}}",
+      "winrm_password": "vagrant",
+      "winrm_timeout": "{{user `winrm_timeout`}}",
+      "winrm_username": "vagrant"
+    }
+  ],
+  "provisioners": [
+    {
+      "execute_command": "{{ .Vars }} cmd /c \"{{ .Path }}\"",
+      "remote_path": "/tmp/script.bat",
+      "scripts": [
+        "./base/scripts/vm-guest-tools.bat",
+        "./base/scripts/enable-rdp.bat"
+      ],
+      "type": "windows-shell"
+    },
+    {
+      "scripts": [
+        "./base/scripts/debloat-windows.ps1"
+      ],
+      "type": "powershell"
+    },
+    {
+      "restart_timeout": "{{user `restart_timeout`}}",
+      "type": "windows-restart"
+    },
+    {
+      "scripts": [
+        "./base/scripts/set-powerplan.ps1",
+        "./base/scripts/docker/disable-windows-defender.ps1"
+      ],
+      "type": "powershell"
+    },
+    {
+      "execute_command": "{{ .Vars }} cmd /c \"{{ .Path }}\"",
+      "remote_path": "/tmp/script.bat",
+      "scripts": [
+        "./base/scripts/pin-powershell.bat",
+        "./base/scripts/compile-dotnet-assemblies.bat",
+        "./base/scripts/set-winrm-automatic.bat",
+        "./base/scripts/uac-enable.bat",
+        "./base/scripts/dis-updates.bat",
+        "./base/scripts/compact.bat"
+      ],
+      "type": "windows-shell"
+    },
+    {
+      "scripts": [
+        "./scripts/provision.ps1"
+      ],
+      "type": "powershell"
+    },
+    {
+      "source": "./files/Microsoft.PowerShell_profile.ps1",
+      "destination": "C:\\Users\\vagrant\\Documents\\WindowsPowerShell\\Microsoft.PowerShell_profile.ps1",
+      "type": "file"
+    }
+  ],
+  "post-processors": [
+    {
+      "keep_input_artifact": false,
+      "output": "boxes/mruby_{{.Provider}}.box",
+      "type": "vagrant",
+      "vagrantfile_template": "Vagrantfile.template"
+    }
+  ]
+}
