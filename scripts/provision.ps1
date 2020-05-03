@@ -11,10 +11,10 @@ $vsInstallOptions = "--installPath $vsHome",
                     "--add Microsoft.VisualStudio.Component.Windows10SDK.17763"
 
 # Ruby
-$rubyVersion = '2.5.5-1'
+$rubyVersion = '2.7.1-1'
 $rubyInstallerPath = "$env:TEMP\ruby_installer.exe"
 $rubyInstallerURL = "https://github.com/oneclick/rubyinstaller2/releases/download/RubyInstaller-$rubyVersion/rubyinstaller-devkit-$rubyVersion-x64.exe"
-$rubyHome = 'C:\Ruby25-x64'
+$rubyHome = 'C:\Ruby27-x64'
 
 # Bison
 $bisonVersion = '2.4.1'
@@ -23,11 +23,17 @@ $bisonInstallerURL = "https://nchc.dl.sourceforge.net/project/gnuwin32/bison/$bi
 $bisonHome = 'C:\GnuWin32'
 
 # Vim
-$vimVersion = '8.1.1525'
+$vimVersion = '8.2.0671'
 $vimInstallerPath = "$env:TEMP\vim_installer.exe"
 $vimInstallerURL = "https://github.com/vim/vim-win32-installer/releases/download/v$vimVersion/gvim_$($vimVersion)_x64.exe"
 # NOTE: Unable change NSIS install Dir
-$vimHome = 'C:\Program Files\Vim\vim81'
+$vimHome = 'C:\Program Files\Vim\vim82'
+
+# GIT
+$gitVersion = '2.26.2'
+$gitInstallerPath = "$env:TEMP\git_installer.exe"
+$gitInstallerURL = "https://github.com/git-for-windows/git/releases/download/v$gitVersion.windows.1/Git-$gitVersion-64-bit.exe"
+$gitHome = 'C:\Git26-x64'
 
 # Functions
 function Install {
@@ -51,12 +57,13 @@ function Install {
 $jobs = (Install "Visual Studio $vsVersion Community" -Url $vsInstallerURL -Path $vsInstallerPath -Arguments $vsInstallOptions),
         (Install "Ruby $rubyVersion" -Url $rubyInstallerURL -Path $rubyInstallerPath -Arguments "/silent", "/dir=$rubyHome", "/tasks=modpath"),
         (Install "Bison $bisonVersion" -Url $bisonInstallerURL -Path $bisonInstallerPath -Arguments "/silent", "/dir=$bisonHome", "/tasks=modpath"),
-        (Install "Vim $vimVersion" -Url $vimInstallerURL -Path $vimInstallerPath -Arguments "/S", "/D=$vimHome")
+        (Install "Vim $vimVersion" -Url $vimInstallerURL -Path $vimInstallerPath -Arguments "/S", "/D=$vimHome"),
+        (Install "Git $gitVersion" -Url $gitInstallerURL -Path $gitInstallerPath -Arguments "/silent", "/dir=$gitHome", "/tasks=modpath")
 
 Receive-Job $jobs -Wait -AutoRemoveJob
 
 # Environments
 Write-Host 'Setup Environment Path'
 $oldPath = (Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH).path
-$newPath = "$oldPath;$bisonHome\bin;$vimHome"
+$newPath = "$oldPath;$bisonHome\bin;$vimHome;$gitHome\bin"
 Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH -Value $newPath
